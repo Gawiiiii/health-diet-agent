@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myapplication.data.image.ImagePreprocessor
 import com.example.myapplication.data.ocr.OcrProcessor
 import com.example.myapplication.data.repository.AnalysisRepository
 import com.example.myapplication.data.repository.PreferencesRepository
@@ -15,6 +16,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import retrofit2.HttpException
 
 data class CaptureUiState(
     val imageUri: Uri? = null,
@@ -103,6 +110,55 @@ class CaptureViewModel(
                 }
             }
         }
+    }
+
+    fun analyzeCurrentImage() {
+        val uri = uiState.value.imageUri
+        if (uri == null) {
+            _uiState.update { it.copy(errorMessage = "No image selected.") }
+            return
+        }
+        _uiState.update { it.copy(isAnalyzing = true, errorMessage = null) }
+        viewModelScope.launch {
+            try {
+                val preferences = preferencesRepository.preferencesFlow.first()
+                val imagePart = withContext(Dispatchers.IO) { buildImagePart(uri) }
+                val response = analysisRepository.analyzeImage(imagePart, preferences)
+                val historyId = analysisRepository.saveHistory(
+                    imageUri = uri.toString(),
+                    ocrText = "[Image Analysis]",
+                    response = response
+                )
+                _uiState.update { it.copy(isAnalyzing = false) }
+                _events.emit(CaptureEvent.NavigateToResult(historyId))
+            } catch (e: Exception) {
+                val errorDetail = if (e is HttpException) {
+                    val body = e.response()?.errorBody()?.string()
+                    if (!body.isNullOrBlank()) {
+                        body
+                    } else {
+                        e.message()
+                    }
+                } else {
+                    e.message
+                }
+                _uiState.update {
+                    it.copy(
+                        isAnalyzing = false,
+                        errorMessage = "Image analyze failed: ${errorDetail ?: "unknown error"}"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun buildImagePart(uri: Uri): MultipartBody.Part {
+        val payload = ImagePreprocessor.prepareForUpload(
+            context = getApplication(),
+            uri = uri
+        )
+        val body = payload.bytes.toRequestBody(payload.mimeType.toMediaTypeOrNull())
+        return MultipartBody.Part.createFormData("image", payload.fileName, body)
     }
 
     private companion object {

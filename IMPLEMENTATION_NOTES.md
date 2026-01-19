@@ -18,15 +18,15 @@ capture or upload -> OCR -> analysis -> suggestions -> history.
   - Retrofit + Moshi for HTTP
   - Room for history
   - DataStore for preferences
-- Backend (FastAPI + OpenAI)
-  - Optional OpenAI call to structure menu items
+- Backend (FastAPI + SoruxGPT)
+  - SoruxGPT chat models for image captioning and text analysis
   - Rule-based risk scoring
 
 ## Backend service (FastAPI)
 
 ### Key files
 
-- `server/main.py`: API, parsing, rule-based scoring, OpenAI fallback.
+- `server/main.py`: API, parsing, rule-based scoring, SoruxGPT integration.
 - `server/requirements.txt`: Python dependencies.
 
 ### Endpoint
@@ -63,8 +63,13 @@ Response JSON:
 
 ### Environment variables
 
-- `OPENAI_API_KEY`: optional. If missing, the service uses a naive parser.
-- `OPENAI_MODEL`: optional. Default is `gpt-4o-mini`.
+- `SORUXGPT_API_KEY`: required. SoruxGPT API key (Bearer token).
+- `SORUXGPT_BASE_URL`: optional. Default is `https://gpt.soruxgpt.com/api/api/v1`.
+- `SORUXGPT_TEXT_MODEL`: optional. Default is `gpt-3.5-turbo`.
+- `SORUXGPT_IMAGE_MODEL`: optional. Defaults to the text model when unset.
+- `SORUXGPT_TIMEOUT_SECONDS`: optional. Global timeout for SoruxGPT calls (seconds).
+- `SORUXGPT_TEXT_TIMEOUT_SECONDS`: optional. Overrides text model timeout.
+- `SORUXGPT_IMAGE_TIMEOUT_SECONDS`: optional. Overrides image model timeout.
 
 ### Run locally
 
@@ -72,8 +77,17 @@ Response JSON:
 python -m venv .venv
 source .venv/bin/activate
 pip install -r server/requirements.txt
-export OPENAI_API_KEY=your_key_here
+export SORUXGPT_API_KEY=your_key_here
+export SORUXGPT_TEXT_MODEL=gpt-3.5-turbo
+export SORUXGPT_IMAGE_MODEL=gpt-4o-mini
 uvicorn server.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### SoruxGPT smoke test
+
+```bash
+export SORUXGPT_API_KEY=your_key_here
+python server/soruxgpt_smoke_test.py --image photos/food1.png
 ```
 
 ## Android app
@@ -124,4 +138,4 @@ Set the base URL in `app/src/main/res/values/strings.xml`:
 
 - If the app cannot reach the backend, verify the base URL and device IP.
 - If OCR is empty, test with a higher-contrast image.
-- If OpenAI fails, the backend still returns a basic parse.
+- If SoruxGPT fails, the backend still returns a basic parse.

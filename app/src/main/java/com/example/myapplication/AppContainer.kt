@@ -12,6 +12,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.TimeUnit
 
 class AppContainer(context: Context) {
     private val moshi = Moshi.Builder()
@@ -24,6 +25,9 @@ class AppContainer(context: Context) {
                 level = HttpLoggingInterceptor.Level.BASIC
             }
         )
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(180, TimeUnit.SECONDS)
+        .writeTimeout(180, TimeUnit.SECONDS)
         .build()
 
     private val retrofit = Retrofit.Builder()

@@ -210,6 +210,14 @@ fun CaptureScreen(
                     Text(text = "Analyze", modifier = Modifier.padding(start = 8.dp))
                 }
 
+                Button(
+                    onClick = { viewModel.analyzeCurrentImage() },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = uiState.imageUri != null && !uiState.isAnalyzing
+                ) {
+                    Text(text = "Analyze Image (Cloud)")
+                }
+
                 if (uiState.isOcrRunning || uiState.isAnalyzing) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),

@@ -28,6 +28,11 @@ future fixes and demo changes.
 | DBG-005 | Room DAO signature mismatch | Kotlin wildcards in DAO methods | Add `@JvmSuppressWildcards` to DAO | Resolved |
 | DBG-006 | Room metadata version mismatch | Room 2.6.1 did not support Kotlin 2.0 metadata | Upgrade Room to 2.7.0 | Resolved |
 | DBG-007 | JVM target mismatch (11 vs 21) | Kotlin default target did not match Java target | Set `kotlinOptions.jvmTarget = "11"` | Resolved |
+| DBG-008 | `Analyze Image` returns 501/timeout | HF model loading/large image upload and insufficient timeouts | Add HF `wait_for_model`, retries, larger timeouts, and client-side image downscale | Resolved |
+| DBG-009 | `Analyze Image` returns 502 | HF API error masked by generic message | Surface HF error details to client and logs | Resolved |
+| DBG-010 | HF caption call still times out | HF queue delays and payload size still exceed timeout | Add configurable HF timeouts, retry on timeout, tighter image compression | Resolved |
+| DBG-011 | SoruxGPT returns 413 on smoke test | Base64 image payload exceeded gateway size limit | Downscale/compress image before upload in smoke test | Resolved |
+| DBG-012 | SoruxGPT smoke test KeyError | JSON schema braces not escaped in prompt formatting | Escape braces in prompt templates | Resolved |
 
 ## Issue Details
 
@@ -98,6 +103,66 @@ future fixes and demo changes.
 - Resolution: Set Kotlin `jvmTarget` to 11.
 - Files:
   - `app/build.gradle.kts`
+
+### DBG-008: Hugging Face timeout / 501 errors
+
+- Symptom: `Analyze Image (Cloud)` returns 501 or times out.
+- Root cause:
+  - HF Inference API cold-start/model loading.
+  - Large images causing slow inference and network timeouts.
+  - Missing HF token or model configuration.
+- Resolution:
+  - Increase client and server timeouts.
+  - Enable `wait_for_model` and retry in HF requests.
+  - Downscale images to max 768px and compress to JPEG quality 75 before upload.
+- Files:
+  - `app/src/main/java/com/example/myapplication/AppContainer.kt`
+  - `app/src/main/java/com/example/myapplication/data/image/ImagePreprocessor.kt`
+  - `app/src/main/java/com/example/myapplication/viewmodel/CaptureViewModel.kt`
+  - `server/main.py`
+
+### DBG-009: 502 error detail visibility
+
+- Symptom: App only showed "502 Bad Gateway" without reason.
+- Root cause: HF error details were not surfaced to client.
+- Resolution:
+  - Attach HF status and error text to response detail.
+  - Display HTTP error body in the app.
+- Files:
+  - `server/main.py`
+  - `app/src/main/java/com/example/myapplication/viewmodel/CaptureViewModel.kt`
+
+### DBG-010: HF caption timeouts
+
+- Symptom: HF caption request timed out and the app reported "OpenAI not configured."
+- Root cause: HF inference queue exceeded the fixed timeout for image uploads.
+- Resolution:
+  - Add per-endpoint timeout env vars and retry on timeout.
+  - Compress images more aggressively before upload.
+  - Increase client read/write timeouts.
+- Files:
+  - `server/main.py`
+  - `app/src/main/java/com/example/myapplication/data/image/ImagePreprocessor.kt`
+  - `app/src/main/java/com/example/myapplication/AppContainer.kt`
+
+### DBG-011: SoruxGPT 413 on image upload
+
+- Symptom: SoruxGPT image caption request returned HTTP 413.
+- Root cause: Base64 data URL was too large for the gateway.
+- Resolution:
+  - Downscale and JPEG-compress images in the SoruxGPT smoke test.
+  - Adjust `--max-size` and `--quality` to control payload size.
+- Files:
+  - `server/soruxgpt_smoke_test.py`
+
+### DBG-012: SoruxGPT smoke test KeyError
+
+- Symptom: `KeyError: '"menu_items"'` while building prompt.
+- Root cause: Python `str.format` treated JSON braces as format tokens.
+- Resolution: Escape JSON braces in prompt templates with `{{` and `}}`.
+- Files:
+  - `server/soruxgpt_smoke_test.py`
+  - `server/main.py`
 
 ## Coding Guidelines for Future Changes
 

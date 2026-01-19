@@ -32,7 +32,7 @@
 ```
 Android 客户端（Kotlin + Jetpack Compose）
         ↓（HTTP/REST）
-后端分析服务（FastAPI + 可选 OpenAI API）
+后端分析服务（FastAPI + SoruxGPT API）
         ↓
 本地存储（Room + DataStore）
 ```
@@ -50,7 +50,7 @@ Android 客户端（Kotlin + Jetpack Compose）
 ### 2.3 关键技术点
 
 - Android 多模态输入：CameraX + ML Kit OCR + Compose UI
-- 智能理解与建议生成：FastAPI + OpenAI（可选）+ 规则引擎
+- 智能理解与建议生成：FastAPI + SoruxGPT + 规则引擎
 - 个性化偏好：DataStore 存储用户偏好与健康目标
 
 ### 2.4 其他技术说明
@@ -62,7 +62,7 @@ Android 客户端（Kotlin + Jetpack Compose）
 ### 2.5 当前实现情况（基于现有代码）
 
 - Android 端已完成：相机采集、OCR 识别、文本编辑、分析调用、结果展示、历史记录、偏好设置、演示一键填充。
-- 后端已完成：`/analyze` 接口、结构化输出、规则命中、OpenAI 可选解析、异常处理与 CORS。
+- 后端已完成：`/analyze` 接口、结构化输出、规则命中、SoruxGPT 解析、异常处理与 CORS。
 - 本地存储已完成：Room 历史记录与 DataStore 偏好数据持久化。
 
 ## 3. 项目计划
@@ -71,7 +71,7 @@ Android 客户端（Kotlin + Jetpack Compose）
 
 **技术可行性**
 - CameraX、ML Kit、Jetpack Compose、FastAPI 均为成熟技术栈。
-- OCR + 规则引擎已实现，OpenAI 仅作为可选增强能力。
+- OCR + 规则引擎已实现，SoruxGPT 提供结构化解析与增强能力。
 
 **资源可行性**
 - 设备与开发环境需求可控，依赖均为主流开源组件。
@@ -106,7 +106,7 @@ Android 客户端（Kotlin + Jetpack Compose）
 - Android CameraX: https://developer.android.com/jetpack/androidx/releases/camerax
 - Google ML Kit: https://developers.google.com/ml-kit/vision/text-recognition
 - FastAPI 文档: https://fastapi.tiangolo.com/
-- OpenAI API 文档: https://platform.openai.com/docs
+- SoruxGPT API 文档: 见 `api_doc.md`
 
 ## 6. 附件（可选）
 
